@@ -15,129 +15,196 @@ import androidx.appcompat.app.AppCompatActivity
 
 class SplashActivity : AppCompatActivity() {
 
-    private val SPLASH_DURATION = 5000L
+    private val SPLASH_DURATION = 5500L
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val runningAnimators = mutableListOf<Animator>()
+    
+    private val navigateRunnable = Runnable { navigateToMain() }
+    private val rootViewRunnable = Runnable { executeFinalFadeOut() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // لو التطبيق اتفتح من واتساب أو مدير ملفات (ACTION_VIEW)
-        // ادخل على MainActivity مباشرة بدون Splash
+        // الدخول السريع إذا فتح من ملف خارجي (واتساب أو مدير الملفات) وتأمين الـ Intent
         if (intent?.action == Intent.ACTION_VIEW && intent?.data != null) {
             val fileUri = intent.data
             val mainIntent = Intent(this, MainActivity::class.java).apply {
                 action = Intent.ACTION_VIEW
                 data = fileUri
-                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
             startActivity(mainIntent)
             finish()
             return
         }
 
-        // لو من الأيقونة: عرض الـ Splash كامل
         setContentView(R.layout.activity_splash)
 
         val logo = findViewById<ImageView>(R.id.splashLogo)
         val titleText = findViewById<TextView>(R.id.splashTitle)
         val devText = findViewById<TextView>(R.id.splashDev)
         val progressBar = findViewById<ProgressBar>(R.id.splashProgress)
+        val progressText = findViewById<TextView>(R.id.splashProgressText)
         val glowLine = findViewById<View>(R.id.splashGlowLine)
 
-        // كل العناصر شفافة في البداية
-        listOf(logo, titleText, devText, progressBar, glowLine).forEach {
-            it.alpha = 0f
-        }
-        logo.scaleX = 0.5f; logo.scaleY = 0.5f
-        titleText.translationY = 50f
-        devText.translationY = 40f
+        // صبغ شريط التحميل السميك بالبرتقالي الدافئ المضيء المستوحى من شعارك
+        progressBar.progressDrawable?.setColorFilter(
+            android.graphics.Color.parseColor("#FF9800"), 
+            android.graphics.PorterDuff.Mode.SRC_IN
+        )
+        // صبغ خط الليزر الماسح بالبرتقالي النيون المتوهج
+        glowLine.setBackgroundColor(android.graphics.Color.parseColor("#FFAC33"))
 
-        // اللوجو - Neon flash entrance
+        // ضبط الحالات المبدئية للتلاشي والدخول
+        listOf(logo, titleText, devText, progressBar, progressText, glowLine).forEach { it.alpha = 0f }
+        logo.scaleX = 0.2f; logo.scaleY = 0.2f
+        titleText.translationY = 80f
+        devText.translationY = 60f
+
+        // 1. دخول الشعار بنمط انفجار نيون دراماتيكي (Sci-Fi Warp Entrance)
         AnimatorSet().apply {
             playTogether(
-                ObjectAnimator.ofFloat(logo, "alpha", 0f, 1.2f, 1f).setDuration(1000),
-                ObjectAnimator.ofFloat(logo, "scaleX", 0.5f, 1.08f, 1f).setDuration(1000),
-                ObjectAnimator.ofFloat(logo, "scaleY", 0.5f, 1.08f, 1f).setDuration(1000)
+                ObjectAnimator.ofFloat(logo, "alpha", 0f, 1.0f).setDuration(1200),
+                ObjectAnimator.ofFloat(logo, "scaleX", 0.2f, 1.15f, 1.0f).setDuration(1200),
+                ObjectAnimator.ofFloat(logo, "scaleY", 0.2f, 1.15f, 1.0f).setDuration(1200)
             )
-            interpolator = DecelerateInterpolator(2.5f)
-            startDelay = 300
-            start()
+            interpolator = OvershootInterpolator(1.4f)
+            startDelay = 200
+            trackAndStart()
         }
 
-        // Neon glow pulse على اللوجو
-        Handler(Looper.getMainLooper()).postDelayed({
-            ObjectAnimator.ofFloat(logo, "alpha", 1f, 0.7f, 1f, 0.85f, 1f).apply {
-                duration = 600
+        // 2. تفعيل نبض التمدد والوميض اللانهائي على الشعار الفاخر (Infinite Neon Loop)
+        mainHandler.postDelayed({
+            val pulseAnim = ValueAnimator.ofFloat(0.92f, 1.05f).apply {
+                duration = 1600
+                repeatCount = ValueAnimator.INFINITE
+                repeatMode = ValueAnimator.REVERSE
                 interpolator = AccelerateDecelerateInterpolator()
-                start()
+                addUpdateListener {
+                    val scale = it.animatedValue as Float
+                    logo.scaleX = scale
+                    logo.scaleY = scale
+                    logo.alpha = 0.85f + (scale - 0.92f) * 0.8f
+                }
             }
-        }, 1000)
+            pulseAnim.trackAndStart()
+        }, 1400)
 
-        // الخط النيون
-        ObjectAnimator.ofFloat(glowLine, "alpha", 0f, 1f).apply {
-            duration = 400; startDelay = 900; start()
+        // 3. تأثير الطفو والجاذبية السينمائي للشعار في المنتصف
+        mainHandler.postDelayed({
+            val floatLogo = ObjectAnimator.ofFloat(logo, "translationY", -12f, 12f).apply {
+                duration = 2200
+                repeatCount = ValueAnimator.INFINITE
+                repeatMode = ValueAnimator.REVERSE
+                interpolator = AccelerateDecelerateInterpolator()
+            }
+            floatLogo.trackAndStart()
+        }, 1400)
+
+        // 4. حركية خط الليزر البرتقالي الماسح (Laser Glow Line Scan)
+        ObjectAnimator.ofFloat(glowLine, "alpha", 0f, 0.8f, 0.4f, 1f).apply {
+            duration = 800; startDelay = 800; trackAndStart()
         }
         ObjectAnimator.ofFloat(glowLine, "scaleX", 0f, 1f).apply {
-            duration = 500
-            startDelay = 900
-            interpolator = AccelerateDecelerateInterpolator()
-            start()
+            duration = 1200; startDelay = 800
+            interpolator = DecelerateInterpolator(2.0f)
+            trackAndStart()
         }
 
-        // النصوص
+        // 5. صعود ووميض النصوص باللون العاجي الذهبي الفخم
         AnimatorSet().apply {
             playTogether(
-                ObjectAnimator.ofFloat(titleText, "alpha", 0f, 1f).setDuration(600),
-                ObjectAnimator.ofFloat(titleText, "translationY", 50f, 0f).setDuration(600)
+                ObjectAnimator.ofFloat(titleText, "alpha", 0f, 1f).setDuration(800),
+                ObjectAnimator.ofFloat(titleText, "translationY", 80f, 0f).setDuration(800)
             )
-            interpolator = OvershootInterpolator(1.5f)
-            startDelay = 1200
-            start()
+            interpolator = OvershootInterpolator(1.8f)
+            startDelay = 1000
+            trackAndStart()
         }
+        
         AnimatorSet().apply {
             playTogether(
-                ObjectAnimator.ofFloat(devText, "alpha", 0f, 1f).setDuration(500),
-                ObjectAnimator.ofFloat(devText, "translationY", 40f, 0f).setDuration(500)
+                ObjectAnimator.ofFloat(devText, "alpha", 0f, 0.8f).setDuration(700),
+                ObjectAnimator.ofFloat(devText, "translationY", 60f, 0f).setDuration(700)
             )
             interpolator = DecelerateInterpolator()
-            startDelay = 1600
-            start()
+            startDelay = 1500
+            trackAndStart()
         }
 
-        // Progress Bar
+        // 6. شريط التحميل السميك والنسبة المئوية معاً بتأثير التلاشي الظاهري
         ObjectAnimator.ofFloat(progressBar, "alpha", 0f, 1f).apply {
-            duration = 300; startDelay = 1800; start()
+            duration = 400; startDelay = 1600; trackAndStart()
         }
-        ValueAnimator.ofInt(0, 100).apply {
-            duration = SPLASH_DURATION - 500
-            startDelay = 1800
-            interpolator = AccelerateDecelerateInterpolator()
-            addUpdateListener { progressBar.progress = it.animatedValue as Int }
-            start()
+        ObjectAnimator.ofFloat(progressText, "alpha", 0f, 1f).apply {
+            duration = 400; startDelay = 1600; trackAndStart()
         }
 
-        // Neon pulse على شريط التحميل
-        ValueAnimator.ofFloat(0.7f, 1f).apply {
-            duration = 800
+        // تحريك العداد الرياضي وتحديث الرقم والشريط معاً ديناميكياً حتى %100
+        ValueAnimator.ofInt(0, 100).apply {
+            duration = SPLASH_DURATION - 2000
+            startDelay = 1600
+            interpolator = PathInterpolator(0.4f, 0.0f, 0.2f, 1.0f)
+            addUpdateListener { animator ->
+                val progressValue = animator.animatedValue as Int
+                progressBar.progress = progressValue
+                progressText.text = "$progressValue%"
+            }
+            trackAndStart()
+        }
+
+        // وميض النيون البرتقالي التكراري اللانهائي لشريط التحميل والنص معاً
+        ValueAnimator.ofFloat(0.6f, 1.0f).apply {
+            duration = 750
             repeatCount = ValueAnimator.INFINITE
             repeatMode = ValueAnimator.REVERSE
-            addUpdateListener { progressBar.alpha = it.animatedValue as Float }
-            startDelay = 2000
-            start()
+            addUpdateListener { animator ->
+                val alphaValue = animator.animatedValue as Float
+                progressBar.alpha = alphaValue
+                progressText.alpha = alphaValue
+            }
+            startDelay = 1800
+            trackAndStart()
         }
 
-        // انتقل للـ MainActivity بعد 5 ثواني
-        Handler(Looper.getMainLooper()).postDelayed({
-            val rootView = findViewById<View>(android.R.id.content)
-            ObjectAnimator.ofFloat(rootView, "alpha", 1f, 0f).apply {
-                duration = 500
-                interpolator = AccelerateInterpolator()
-                start()
-            }
-            Handler(Looper.getMainLooper()).postDelayed({
-                startActivity(Intent(this, MainActivity::class.java))
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-                finish()
-            }, 500)
-        }, SPLASH_DURATION)
+        // جدولة الخروج التلاشي والسينمائي للواجهة الرئيسية
+        mainHandler.postDelayed(rootViewRunnable, SPLASH_DURATION)
+    }
+
+    private fun Animator.trackAndStart() {
+        runningAnimators.add(this)
+        this.start()
+    }
+
+    private fun executeFinalFadeOut() {
+        val rootView = findViewById<View>(android.R.id.content)
+        ObjectAnimator.ofFloat(rootView, "alpha", 1f, 0f).apply {
+            duration = 600
+            interpolator = AccelerateInterpolator()
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    mainHandler.post(navigateRunnable)
+                }
+            })
+            start()
+        }
+    }
+
+    private fun navigateToMain() {
+        if (!isFinishing) {
+            startActivity(Intent(this, MainActivity::class.java))
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            finish()
+        }
+    }
+
+    override fun onDestroy() {
+        // تنظيف الـ Lifecycle لحماية معالج الهاتف ومنع الـ Memory Leaks والانهيارات تماماً
+        mainHandler.removeCallbacksAndMessages(null)
+        for (animator in runningAnimators) {
+            if (animator.isRunning) animator.cancel()
+        }
+        runningAnimators.clear()
+        super.onDestroy()
     }
 }
