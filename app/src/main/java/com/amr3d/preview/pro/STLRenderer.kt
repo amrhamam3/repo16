@@ -190,7 +190,7 @@ class STLRenderer : GLSurfaceView.Renderer {
     }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        GLES20.glClearColor(0.0c1017f, 0.12f, 0.15f, 1.0f)
+        GLES20.glClearColor(0.05f, 0.12f, 0.15f, 1.0f) // تم إصلاح كتابة الرقم العشري هنا بدقة
         GLES20.glEnable(GLES20.GL_DEPTH_TEST)
         GLES20.glDepthFunc(GLES20.GL_LEQUAL)
 
@@ -221,7 +221,7 @@ class STLRenderer : GLSurfaceView.Renderer {
         Matrix.scaleM(modelMatrix, 0, scaleNorm, scaleNorm, scaleNorm)
         Matrix.rotateM(modelMatrix, 0, rotationX, 1f, 0f, 0f)
         Matrix.rotateM(modelMatrix, 0, rotationY, 0f, 1f, 0f)
-        Matrix.translateM(modelMatrix, 0, -modelCenter[0], -modelCenter[1], -modelCenter[2])
+        Matrix.translateM(modelMatrix, 0, -modelCenter, -modelCenter, -modelCenter)
 
         Matrix.multiplyMM(tempMatrix, 0, viewMatrix, 0, modelMatrix, 0)
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, tempMatrix, 0)
@@ -236,5 +236,3 @@ class STLRenderer : GLSurfaceView.Renderer {
         GLES20.glUniformMatrix4fv(GLES20.glGetUniformLocation(meshProgram, "uNormalMatrix"), 1, false, normalMatrix, 0)
         GLES20.glUniform4fv(GLES20.glGetUniformLocation(meshProgram, "uColor"), 1, modelColor, 0)
         GLES20.glUniform3fv(GLES20.glGetUniformLocation(meshProgram, "uLightDir"), 1, lightDir, 0)
-        GLES20.glUniform1i(GLES20.glGetUniformLocation(meshProgram, "uMaterial"), currentMaterial)
-
