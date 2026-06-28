@@ -12,7 +12,6 @@ import javax.microedition.khronos.opengles.GL10
 
 class STLRenderer : GLSurfaceView.Renderer {
 
-    // --- Shaders مع دعم اتجاه الإضاءة والخامات الإجرائية ---
     private val vertexShaderCode = """
         uniform mat4 uMVPMatrix;
         uniform mat4 uNormalMatrix;
@@ -33,7 +32,7 @@ class STLRenderer : GLSurfaceView.Renderer {
         varying vec3 fPosition;
         uniform vec4 uColor;
         uniform vec3 uLightDir;
-        uniform int uMaterial;  // 0=plastic 1=metal 2=wood 3=marble 4=bronze 5=carbon 6=resin
+        uniform int uMaterial;
 
         float hash(vec3 p) {
             p = fract(p * vec3(443.8975, 397.2973, 491.1871));
@@ -144,8 +143,11 @@ class STLRenderer : GLSurfaceView.Renderer {
     private var vertexBuffer: FloatBuffer? = null
     private var normalBuffer: FloatBuffer? = null
     private var wireframeBuffer: FloatBuffer? = null
-    private var wireframeVertexCount = 0
-    private var vertexCountToDraw = 0
+    
+    var wireframeVertexCount = 0
+    var vertexCountToDraw = 0
+    var surfaceWidth = 0
+    var surfaceHeight = 0
 
     private val vboIds = IntArray(3)
     private var vboReady = false
@@ -153,7 +155,7 @@ class STLRenderer : GLSurfaceView.Renderer {
 
     @Volatile var wireframeMode = false
     @Volatile var currentMaterial = 0
-    @Volatile var modelColor = floatArrayOf(0.2f, 0.6f, 0.9f, 1.0f) // لون المجسم الافتراضي
+    @Volatile var modelColor = floatArrayOf(1.0f, 0.58f, 0.0f, 1.0f)
 
     private val mvpMatrix = FloatArray(16)
     private val projectionMatrix = FloatArray(16)
@@ -168,32 +170,37 @@ class STLRenderer : GLSurfaceView.Renderer {
     @Volatile var panX = 0f
     @Volatile var panY = 0f
 
-    @Volatile
-    var lightAngle = 45f
-        set(value) {
-            field = ((value % 360f) + 360f) % 360f
-        }
+    @Volatile var lightAngle = 45f
 
     private var modelCenter = floatArrayOf(0f, 0f, 0f)
     private var modelRadius = 1f
 
-    // لإدارة النقاط التفاعلية لخط القياس
     val measurementPoints = CopyOnWriteArrayList<FloatArray>()
 
-    fun updateModel(model: STLModel) {
+    fun setModel(model: STLModel) {
         pendingModel = model
     }
 
+    fun clearMeasurementPoints() {
+        measurementPoints.clear()
+    }
+
+    fun addMeasurementPoint(point: FloatArray) {
+        measurementPoints.add(point)
+    }
+
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        GLES20.glClearColor(0.12f, 0.12f, 0.15f, 1.0f)
+        GLES20.glClearColor(0.0c1017f, 0.12f, 0.15f, 1.0f)
         GLES20.glEnable(GLES20.GL_DEPTH_TEST)
-        GLES20.glDepthFunc(GLES20.GL_LEVAL)
+        GLES20.glDepthFunc(GLES20.GL_LEQUAL)
 
         meshProgram = loadProgram(vertexShaderCode, fragmentShaderCode)
         lineProgram = loadProgram(lineVertexShaderCode, lineFragmentShaderCode)
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+        surfaceWidth = width
+        surfaceHeight = height
         GLES20.glViewport(0, 0, width, height)
         val ratio = width.toFloat() / height
         Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1f, 1f, 1f, 100f)
@@ -201,39 +208,33 @@ class STLRenderer : GLSurfaceView.Renderer {
 
     override fun onDrawFrame(gl: GL10?) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
-
         checkAndUploadVBO()
 
         if (!vboReady || vertexCountToDraw == 0) return
 
-        // حساب مصفوفة العرض والكاميرا
         Matrix.setLookAtM(viewMatrix, 0, 0f, 0f, 6f, 0f, 0f, 0f, 0f, 1f, 0f)
-
-        // بناء مصفوفة المجسم وتحريكها (التحجيم، الدوران، السحب)
         Matrix.setIdentityM(modelMatrix, 0)
         Matrix.translateM(modelMatrix, 0, panX, panY, 0f)
         Matrix.scaleM(modelMatrix, 0, scaleFactor, scaleFactor, scaleFactor)
         
-        // التحجيم النسبي والتمركز التلقائي للمجسم في منتصف الشاشة
         val scaleNorm = 2.5f / if (modelRadius > 0f) modelRadius else 1f
         Matrix.scaleM(modelMatrix, 0, scaleNorm, scaleNorm, scaleNorm)
         Matrix.rotateM(modelMatrix, 0, rotationX, 1f, 0f, 0f)
         Matrix.rotateM(modelMatrix, 0, rotationY, 0f, 1f, 0f)
         Matrix.translateM(modelMatrix, 0, -modelCenter[0], -modelCenter[1], -modelCenter[2])
 
-        // دمج المصفوفات وعمل الـ Normal Matrix لحساب اتجاهات انعكاس الضوء والظل
         Matrix.multiplyMM(tempMatrix, 0, viewMatrix, 0, modelMatrix, 0)
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, tempMatrix, 0)
         Matrix.invertM(tempMatrix, 0, modelMatrix, 0)
         Matrix.transposeM(normalMatrix, 0, tempMatrix, 0)
 
-        // حساب متجه الإضاءة الرياضي بناءً على قيمة الـ Slider الممرر من الواجهة
         val rad = Math.toRadians(lightAngle.toDouble())
-        val lx = Math.cos(rad).toFloat()
-        val lz = Math.sin(rad).toFloat()
-        val lightDir = floatArrayOf(lx, 0.8f, lz)
+        val lightDir = floatArrayOf(Math.cos(rad).toFloat(), 0.8f, Math.sin(rad).toFloat())
 
-        // --- البدء في رسم المجسم ثلاثي الأبعاد ---
         GLES20.glUseProgram(meshProgram)
+        GLES20.glUniformMatrix4fv(GLES20.glGetUniformLocation(meshProgram, "uMVPMatrix"), 1, false, mvpMatrix, 0)
+        GLES20.glUniformMatrix4fv(GLES20.glGetUniformLocation(meshProgram, "uNormalMatrix"), 1, false, normalMatrix, 0)
+        GLES20.glUniform4fv(GLES20.glGetUniformLocation(meshProgram, "uColor"), 1, modelColor, 0)
+        GLES20.glUniform3fv(GLES20.glGetUniformLocation(meshProgram, "uLightDir"), 1, lightDir, 0)
+        GLES20.glUniform1i(GLES20.glGetUniformLocation(meshProgram, "uMaterial"), currentMaterial)
 
-        val uMVPHandle = GLES20.glGetUniformLocation(meshProgram, "uMVPMatrix")
