@@ -12,7 +12,7 @@ import kotlin.math.hypot
  * Touch gestures:
  * - One finger drag      -> rotate model
  * - Two finger pinch     -> zoom
- * - Two finger drag      -> pan
+ * - Two finger drag      -> pan (safeguarded)
  * - Two finger twist     -> rotate (helps reach awkward orientations)
  * - Single tap           -> measurement point picking
  */
@@ -61,7 +61,7 @@ class GLViewerView(context: Context, attrs: AttributeSet? = null) : GLSurfaceVie
                 if (abs(dx) > 1f || abs(dy) > 1f) moved = true
 
                 if (event.pointerCount >= 2) {
-                    // Zoom via pinch
+                    // 1. Zoom via pinch
                     val curSpan = currentSpan(event)
                     if (previousSpan > 10f && curSpan > 10f) {
                         val spanRatio = curSpan / previousSpan
@@ -69,7 +69,7 @@ class GLViewerView(context: Context, attrs: AttributeSet? = null) : GLSurfaceVie
                     }
                     previousSpan = curSpan
 
-                    // Detect if it's mostly a pan or a twist
+                    // 2. Detect Twist
                     val curAngle = currentAngle(event)
                     val angleDelta = curAngle - previousAngle
 
@@ -80,20 +80,25 @@ class GLViewerView(context: Context, attrs: AttributeSet? = null) : GLSurfaceVie
                         else -> angleDelta
                     }
 
-                    // Two-finger twist -> rotate around Z (mapped to Y rotation here)
-                    if (abs(normAngle) > 0.3f) {
-                        stlRenderer.rotationY += normAngle * 1.5f
+                    // التعديل: تفعيل الالتواء والدوران فقط إذا كانت الحركة واضحة وقوية لمنع التداخل العشوائي مع السحب (Pan)
+                    if (abs(normAngle) > 0.8f) { 
+                        stlRenderer.rotationY += normAngle * 1.2f
+                        previousAngle = curAngle
+                    } else {
+                        // تفادي تراكم الفروقات الصغيرة جداً
+                        previousAngle = curAngle
                     }
-                    previousAngle = curAngle
 
-                    // Two-finger pan
-                    stlRenderer.panX += dx * 0.003f
-                    stlRenderer.panY -= dy * 0.003f
+                    // 3. Two-finger pan
+                    // توازن قيم التحجيم وسرعة التحريك الأفقي والعمودي بناءً على معدل التكبير الحالي للمجسم
+                    val panSensitivity = 0.002f / (stlRenderer.scaleFactor.coerceAtLeast(0.5f))
+                    stlRenderer.panX += dx * panSensitivity
+                    stlRenderer.panY -= dy * panSensitivity
 
-                } else {
+                } else if (event.pointerCount == 1 && lastTouchCount == 1) {
                     // One finger rotate
-                    stlRenderer.rotationY += dx * 0.5f
-                    stlRenderer.rotationX += dy * 0.5f
+                    stlRenderer.rotationY += dx * 0.4f
+                    stlRenderer.rotationX += dy * 0.4f
                     stlRenderer.rotationX = stlRenderer.rotationX.coerceIn(-90f, 90f)
                 }
 
@@ -102,15 +107,32 @@ class GLViewerView(context: Context, attrs: AttributeSet? = null) : GLSurfaceVie
             }
 
             MotionEvent.ACTION_POINTER_UP -> {
-                lastTouchCount = (event.pointerCount - 1).coerceAtLeast(1)
-                previousX = event.x
-                previousY = event.y
+                // إصلاح خطأ القفزة العنيفة (Jumping Bug Fixing):
+                // عند رفع أحد الأصابع، نحتاج لإعادة تعيين نقطة الارتكاز السابقة فوراً لتطابق وضعية الإصبع المتبقي المحدثة
+                val pointerIndex = event.actionIndex
+                var remainingIndex = 0
+                if (pointerIndex == 0) remainingIndex = 1
+                
+                if (event.pointerCount > 2) {
+                    lastTouchCount = event.pointerCount - 1
+                    // إعادة الحساب بالاعتماد على الأصابع المتبقية فقط لتفادي تصفير القيم المفاجئ
+                    previousX = averageXExcept(event, pointerIndex)
+                    previousY = averageYExcept(event, pointerIndex)
+                } else {
+                    lastTouchCount = 1
+                    // إذا كان المتبقي إصبع واحد، ننتقل مباشرة لإحداثياته الحقيقية دون توسط حسابي مضلل
+                    previousX = event.getX(remainingIndex)
+                    previousY = event.getY(remainingIndex)
+                }
+                previousSpan = 0f
+                previousAngle = 0f
             }
 
             MotionEvent.ACTION_UP -> {
                 if (!moved && lastTouchCount == 1) {
                     onSingleTap?.invoke(event.x, event.y)
                 }
+                lastTouchCount = 0
             }
         }
         return true
@@ -140,5 +162,28 @@ class GLViewerView(context: Context, attrs: AttributeSet? = null) : GLSurfaceVie
         var total = 0f
         for (i in 0 until event.pointerCount) total += event.getY(i)
         return total / event.pointerCount
+    }
+
+    // دوال مساعدة لمنع قفزات الرؤية عند بقاء أكثر من إصبع
+    private fun averageXExcept(event: MotionEvent, skipIndex: Int): Float {
+        var total = 0f
+        var count = 0
+        for (i in 0 until event.pointerCount) {
+            if (i == skipIndex) continue
+            total += event.getX(i)
+            count++
+        }
+        return if (count > 0) total / count else event.x
+    }
+
+    private fun averageYExcept(event: MotionEvent, skipIndex: Int): Float {
+        var total = 0f
+        var count = 0
+        for (i in 0 until event.pointerCount) {
+            if (i == skipIndex) continue
+            total += event.getY(i)
+            count++
+        }
+        return if (count > 0) total / count else event.y
     }
 }
