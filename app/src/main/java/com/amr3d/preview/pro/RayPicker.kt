@@ -49,40 +49,47 @@ object RayPicker {
             farPoint, 0
         )
 
-        val ox = nearPoint[0] / nearPoint[3]
-        val oy = nearPoint[1] / nearPoint[3]
-        val oz = nearPoint[2] / nearPoint[3]
+        // حماية أمنية وتفادي القسمة على صفر في الإحداثيات المتجانسة (W-Component Protection)
+        val nw = if (nearPoint[3] != 0f) nearPoint[3] else 1f
+        val fw = if (farPoint[3] != 0f) farPoint[3] else 1f
 
-        val fx = farPoint[0] / farPoint[3]
-        val fy = farPoint[1] / farPoint[3]
-        val fz = farPoint[2] / farPoint[3]
+        val ox = nearPoint[0] / nw
+        val oy = nearPoint[1] / nw
+        val oz = nearPoint[2] / nw
+
+        val fx = farPoint[0] / fw
+        val fy = farPoint[1] / fw
+        val fz = farPoint[2] / fw
 
         val dx = fx - ox
         val dy = fy - oy
         val dz = fz - oz
         val len = Math.sqrt((dx * dx + dy * dy + dz * dz).toDouble()).toFloat()
+        
+        // تفادي حدوث سحب أو طول شعاع منعدم القيمة
+        val safeLen = if (len > 0f) len else 1f
 
         return Ray(
             origin = floatArrayOf(ox, oy, oz),
-            direction = floatArrayOf(dx / len, dy / len, dz / len)
+            direction = floatArrayOf(dx / safeLen, dy / safeLen, dz / safeLen)
         )
     }
 
     /**
      * Finds the closest ray/triangle intersection point across the whole mesh.
      * Returns null if the ray doesn't hit any triangle (e.g. user tapped empty space).
-     *
-     * Note: this is an O(triangles) brute-force scan. For typical CNC/print parts
-     * (tens of thousands of triangles) this remains fast enough for an on-tap query.
      */
     fun findClosestIntersection(ray: Ray, model: STLModel): FloatArray? {
         val v = model.vertices
         var closestT = Float.MAX_VALUE
         var hit: FloatArray? = null
 
+        // تأمين الحدود لمنع الـ Crash الحتمي عند نهاية المصفوفات المقتطعة
+        val safeLimit = v.size - 8
+
         var i = 0
-        while (i < v.size) {
-            val x1 = v[i]; val y1 = v[i + 1]; val z1 = v[i + 2]
+        while (i < safeLimit) {
+            val x1 = v[i];     val y1 = v[i + 1]; val z1 = v[i + 2]
             val x2 = v[i + 3]; val y2 = v[i + 4]; val z2 = v[i + 5]
             val x3 = v[i + 6]; val y3 = v[i + 7]; val z3 = v[i + 8]
 
@@ -123,6 +130,8 @@ object RayPicker {
         val hz = dx * e2y - dy * e2x
 
         val a = e1x * hx + e1y * hy + e1z * hz
+        
+        // التحقق من توازي الشعاع مع سطح المثلث بدقة تضمن الإشارات الموجبة والسالبة
         if (a > -EPSILON && a < EPSILON) return null
 
         val f = 1.0f / a
