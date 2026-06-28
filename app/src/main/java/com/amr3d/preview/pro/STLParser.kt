@@ -26,10 +26,9 @@ data class STLModel(
 class STLParseException(message: String) : Exception(message)
 
 object STLParser {
-    
+
     private const val MAX_FILE_SIZE = 2_000_000_000L // 2 GB limit
     private const val CHUNK_SIZE = 4_000_000 // Read 4MB chunks
-    // لا حد ثابت للـ ASCII — يعتمد على RAM الجهاز
 
     /**
      * Entry point: detects ASCII vs Binary STL and parses accordingly.
@@ -38,14 +37,13 @@ object STLParser {
     fun parse(context: Context, uri: Uri): STLModel {
         val resolver = context.contentResolver
 
-        // ✅ إصلاح: استخدام ContentResolver.query للحصول على الحجم الحقيقي
         val fileSize: Long = resolver.query(uri, arrayOf(android.provider.OpenableColumns.SIZE),
             null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) {
                 val idx = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
-                if (idx >= 0 && !cursor.isNull(idx)) cursor.getLong(idx) else -1L
+                if (idx >= 0 &&!cursor.isNull(idx)) cursor.getLong(idx) else -1L
             } else -1L
-        } ?: -1L
+        }?: -1L
 
         val actualSize = if (fileSize > 0) fileSize else
             resolver.openInputStream(uri)?.use { stream ->
@@ -53,21 +51,20 @@ object STLParser {
                 var n = stream.read(buf)
                 while (n >= 0) { count += n; n = stream.read(buf) }
                 count
-            } ?: throw STLParseException("تعذر فتح الملف")
+            }?: throw STLParseException("تعذر فتح الملف")
 
         if (actualSize == 0L) {
             throw STLParseException("الملف فارغ")
         }
 
         if (actualSize > MAX_FILE_SIZE) {
-            throw STLParseException("حجم الملف كبير جداً (أكثر من 500 MB). الملف غير مدعوم")
+            throw STLParseException("حجم الملف كبير جداً (أكثر من 2 GB). الملف غير مدعوم")
         }
 
-        // Read header only (512 bytes) to detect format
         val headerBytes = ByteArray(minOf(512, actualSize.toInt()))
         resolver.openInputStream(uri)?.use { stream ->
             stream.read(headerBytes)
-        } ?: throw STLParseException("تعذر قراءة الملف")
+        }?: throw STLParseException("تعذر قراءة الملف")
 
         return if (isAsciiSTL(headerBytes, actualSize)) {
             parseAsciiStreaming(context, uri)
@@ -76,12 +73,6 @@ object STLParser {
         }
     }
 
-    /**
-     * Heuristic: ASCII STL files start with "solid" (case-insensitive) AND contain "facet"
-     * shortly after. Some binary files also start with "solid" in their header by mistake,
-     * so we double check for the "facet normal" token, and also validate via expected
-     * binary size as a fallback.
-     */
     private fun isAsciiSTL(headerBytes: ByteArray, fileSize: Long): Boolean {
         val header = String(headerBytes, Charsets.US_ASCII).trim()
 
@@ -89,11 +80,10 @@ object STLParser {
             return false
         }
 
-        // Check if the binary-size formula matches; if it matches well, treat as binary
         if (fileSize >= 84) {
             try {
                 val triCountFromHeader = ByteBuffer.wrap(headerBytes, 80, 4)
-                    .order(ByteOrder.LITTLE_ENDIAN).int
+                   .order(ByteOrder.LITTLE_ENDIAN).int
                 val expectedBinarySize = 84L + (triCountFromHeader.toLong() * 50L)
                 if (expectedBinarySize == fileSize) {
                     return false
@@ -103,14 +93,10 @@ object STLParser {
             }
         }
 
-        // Look for "facet" within the header to confirm ASCII structure
         val sample = String(headerBytes, Charsets.US_ASCII)
         return sample.contains("facet", ignoreCase = true)
     }
 
-    /**
-     * Optimized binary parsing with memory-efficient chunk processing.
-     */
     private fun parseBinaryOptimized(context: Context, uri: Uri, fileSize: Long): STLModel {
         if (fileSize < 84) {
             throw STLParseException("ملف STL (Binary) تالف أو غير مكتمل")
@@ -121,10 +107,10 @@ object STLParser {
 
         resolver.openInputStream(uri)?.use { stream ->
             stream.read(headerBuffer)
-        } ?: throw STLParseException("تعذر قراءة الملف")
+        }?: throw STLParseException("تعذر قراءة الملف")
 
         val triangleCount = ByteBuffer.wrap(headerBuffer, 80, 4)
-            .order(ByteOrder.LITTLE_ENDIAN).int
+           .order(ByteOrder.LITTLE_ENDIAN).int
 
         val expectedSize = 84L + (triangleCount.toLong() * 50L)
         if (expectedSize > fileSize) {
@@ -136,8 +122,6 @@ object STLParser {
             throw STLParseException("الملف لا يحتوي على أي مثلثات صالحة")
         }
 
-        // Pre-allocate based on triangle count, but cap it
-        // pre-allocate exact size
         val vertices = FloatArray(triangleCount * 3 * 3)
         val normals = FloatArray(triangleCount * 3 * 3)
 
@@ -149,13 +133,13 @@ object STLParser {
         var maxZ = -Float.MAX_VALUE
 
         var vIdx = 0
-        val triangleBytes = ByteArray(50) // 50 bytes per triangle
+        val triangleBytes = ByteArray(50)
 
         resolver.openInputStream(uri)?.use { stream ->
-            stream.skip(84) // Skip header
+            stream.skip(84)
 
             for (t in 0 until triangleCount) {
-                if (stream.read(triangleBytes) != 50) {
+                if (stream.read(triangleBytes)!= 50) {
                     throw STLParseException("ملف STL تالف - لا يمكن قراءة المثلث رقم $t")
                 }
 
@@ -165,7 +149,6 @@ object STLParser {
                 val ny = buffer.float
                 val nz = buffer.float
 
-                // 3 vertices per triangle
                 for (v in 0 until 3) {
                     val x = buffer.float
                     val y = buffer.float
@@ -181,7 +164,6 @@ object STLParser {
 
                     vIdx += 3
 
-                    // Update bounds
                     if (x < minX) minX = x
                     if (y < minY) minY = y
                     if (z < minZ) minZ = z
@@ -190,10 +172,9 @@ object STLParser {
                     if (z > maxZ) maxZ = z
                 }
 
-                // Skip attribute byte count (2 bytes)
                 buffer.short
             }
-        } ?: throw STLParseException("تعذر قراءة الملف")
+        }?: throw STLParseException("تعذر قراءة الملف")
 
         return STLModel(
             vertices = vertices,
@@ -205,13 +186,11 @@ object STLParser {
         )
     }
 
-    /**
-     * Streaming ASCII parser to handle large ASCII files without loading entire file into memory.
-     */
     private fun parseAsciiStreaming(context: Context, uri: Uri): STLModel {
         val resolver = context.contentResolver
-        val vertexList = ArrayList<Float>(minOf(triangleCount * 9, 1_000_000))
-        val normalList = ArrayList<Float>(4_000_000)
+        // ✅ التصحيح: شلت triangleCount من هنا لأنه مش متعرف لسه
+        val vertexList = ArrayList<Float>()
+        val normalList = ArrayList<Float>()
 
         var minX = Float.MAX_VALUE
         var minY = Float.MAX_VALUE
@@ -286,7 +265,7 @@ object STLParser {
                     }
                 }
             }
-        } ?: throw STLParseException("تعذر قراءة الملف")
+        }?: throw STLParseException("تعذر قراءة الملف")
 
         if (triangleCount == 0) {
             throw STLParseException("لم يتم العثور على أي مثلثات صالحة في ملف الـ ASCII STL")
