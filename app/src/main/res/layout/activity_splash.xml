@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://android.com"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/splash_grid_bg"
     android:clipChildren="false"
     android:clipToPadding="false">
 
-    <!-- الحاوية المركزية للشعار والنصوص لعرضها بشكل سينمائي متناسق -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -15,7 +14,6 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- شعار التطبيق (اللوجو) مجهز للطفو والنبض النيوني -->
         <ImageView
             android:id="@+id/splashLogo"
             android:layout_width="160dp"
@@ -25,7 +23,6 @@
             android:scaleType="fitCenter"
             android:src="@mipmap/ic_launcher" />
 
-        <!-- العنوان الرئيسي للتطبيق باللون العاجي الفاخر المستوحى من الشعار -->
         <TextView
             android:id="@+id/splashTitle"
             android:layout_width="wrap_content"
@@ -40,7 +37,6 @@
             android:shadowDy="4"
             android:shadowRadius="10" />
 
-        <!-- نص حقوق المطور والتصميم -->
         <TextView
             android:id="@+id/splashDev"
             android:layout_width="wrap_content"
@@ -52,7 +48,6 @@
 
     </LinearLayout>
 
-    <!-- الحاوية السفلية لشريط التحميل السميك والنسبة المئوية التفاعلية المتحركة -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -62,7 +57,6 @@
         android:clipChildren="false"
         android:clipToPadding="false">
 
-        <!-- النص الرقمي للنسبة المئوية (يقوم الكود بسحبه أفقياً ليلاحق مقدمة التعبئة) -->
         <TextView
             android:id="@+id/splashProgressText"
             android:layout_width="wrap_content"
@@ -75,7 +69,6 @@
             android:shadowColor="#99FF9800"
             android:shadowRadius="6" />
 
-        <!-- شريط التحميل المطور بسماكة 12dp ليكون بارزاً وبمظهر النيون البرتقالي القوي -->
         <ProgressBar
             android:id="@+id/splashProgress"
             style="?android:attr/progressBarStyleHorizontal"
@@ -87,7 +80,6 @@
 
     </RelativeLayout>
 
-    <!-- خط شعاع الليزر الماسح المتوهج (ينبض ويتحرك أفقياً ليعطي إيحاء مسح أبعاد الـ 3D) -->
     <View
         android:id="@+id/splashGlowLine"
         android:layout_width="match_parent"
