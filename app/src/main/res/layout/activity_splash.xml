@@ -1,81 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:android="http://android.com"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000">
+    android:background="@drawable/splash_grid_bg"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
-    <!-- Wireframe متحرك في الخلفية -->
-    <com.amr3d.preview.pro.WireframeAnimView
-        android:id="@+id/wireframeAnim"
+    <!-- الحاوية المركزية للشعار والنصوص لعرضها بشكل سينمائي متناسق -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- شعار التطبيق (اللوجو) مجهز للطفو والنبض النيوني -->
+        <ImageView
+            android:id="@+id/splashLogo"
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            android:layout_marginBottom="24dp"
+            android:contentDescription="Amr Hamam 3D Logo"
+            android:scaleType="fitCenter"
+            android:src="@mipmap/ic_launcher" />
+
+        <!-- العنوان الرئيسي للتطبيق باللون العاجي الفاخر المستوحى من الشعار -->
+        <TextView
+            android:id="@+id/splashTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Amr 3D Preview Pro"
+            android:textColor="#FFF8E7"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"
+            android:shadowColor="#4DFF9800"
+            android:shadowDx="0"
+            android:shadowDy="4"
+            android:shadowRadius="10" />
+
+        <!-- نص حقوق المطور والتصميم -->
+        <TextView
+            android:id="@+id/splashDev"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3D Designer Edition"
+            android:textColor="#B3E6D7B8"
+            android:textSize="14sp"
+            android:letterSpacing="0.1" />
+
+    </LinearLayout>
+
+    <!-- الحاوية السفلية لشريط التحميل السميك والنسبة المئوية التفاعلية المتحركة -->
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="48dp"
+        android:paddingHorizontal="36dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
-    <!-- اللوجو في المنتصف العلوي -->
-    <ImageView
-        android:id="@+id/splashLogo"
-        android:layout_width="280dp"
-        android:layout_height="150dp"
-        android:src="@drawable/splash_logo"
-        android:scaleType="fitCenter"
-        android:contentDescription="Amr Hamam 3D"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="120dp" />
+        <!-- النص الرقمي للنسبة المئوية (يقوم الكود بسحبه أفقياً ليلاحق مقدمة التعبئة) -->
+        <TextView
+            android:id="@+id/splashProgressText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0%"
+            android:textColor="#FFF8E7"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"
+            android:shadowColor="#99FF9800"
+            android:shadowRadius="6" />
 
-    <!-- خط نيون تحت اللوجو -->
+        <!-- شريط التحميل المطور بسماكة 12dp ليكون بارزاً وبمظهر النيون البرتقالي القوي -->
+        <ProgressBar
+            android:id="@+id/splashProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="12dp"
+            android:layout_below="@id/splashProgressText"
+            android:max="100"
+            android:progress="0" />
+
+    </RelativeLayout>
+
+    <!-- خط شعاع الليزر الماسح المتوهج (ينبض ويتحرك أفقياً ليعطي إيحاء مسح أبعاد الـ 3D) -->
     <View
         android:id="@+id/splashGlowLine"
-        android:layout_width="200dp"
-        android:layout_height="2dp"
-        android:background="@drawable/splash_glow_line"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="278dp" />
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_centerInParent="true"
+        android:background="#FFAC33" />
 
-    <!-- مرحباً بك -->
-    <TextView
-        android:id="@+id/splashTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="مرحباً بك"
-        android:textColor="#FFFFFF"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="298dp" />
-
-    <!-- المطور -->
-    <TextView
-        android:id="@+id/splashDev"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="تم التطوير بواسطة\nAmr Hamam 3D"
-        android:textColor="#FF8A1E"
-        android:textSize="14sp"
-        android:gravity="center"
-        android:lineSpacingExtra="4dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="360dp" />
-
-    <!-- اسم التطبيق في الأسفل -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Amr3D Preview Pro"
-        android:textColor="#555555"
-        android:textSize="11sp"
-        android:letterSpacing="0.15"
-        android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="84dp" />
-
-    <!-- Progress Bar نيون -->
-    <ProgressBar
-        android:id="@+id/splashProgress"
-        style="@style/SplashProgressBar"
-        android:layout_width="260dp"
-        android:layout_height="6dp"
-        android:max="100"
-        android:progress="0"
-        android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="60dp" />
-
-</FrameLayout>
+</RelativeLayout>
