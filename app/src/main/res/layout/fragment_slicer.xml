@@ -3,29 +3,55 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
+    android:padding="16dp"
     android:background="@color/background_dark">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="✂️"
-        android:textSize="48sp" />
+        android:text="ارتفاع الطبقة"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp" />
+
+    <Spinner
+        android:id="@+id/spinnerLayerHeight"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Slicer"
-        android:textColor="@color/accent_orange"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp" />
+        android:text="نسبة الحشو"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp" />
+
+    <Spinner
+        android:id="@+id/spinnerInfill"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnSlice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ابدأ التقطيع"
+        android:backgroundTint="@color/accent_orange" />
+
+    <ProgressBar
+        android:id="@+id/slicerProgressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"
+        style="?android:attr/progressBarStyleHorizontal" />
 
     <TextView
-        android:layout_width="wrap_content"
+        android:id="@+id/tvSlicingStatus"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="افتح ملف STL من العارض أولاً"
-        android:textColor="@color/text_secondary"
-        android:textSize="14sp"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="8dp"
+        android:textColor="@color/text_secondary" />
+
 </LinearLayout>
