@@ -172,7 +172,9 @@ class STLRenderer : GLSurfaceView.Renderer {
 
     @Volatile var lightAngle = 45f
 
-    private var modelCenter = floatArrayOf(0f, 0f, 0f)
+    private var modelCenterX = 0f
+    private var modelCenterY = 0f
+    private var modelCenterZ = 0f
     private var modelRadius = 1f
 
     val measurementPoints = CopyOnWriteArrayList<FloatArray>()
@@ -190,7 +192,7 @@ class STLRenderer : GLSurfaceView.Renderer {
     }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        GLES20.glClearColor(0.05f, 0.12f, 0.15f, 1.0f) // تم إصلاح كتابة الرقم العشري هنا بدقة
+        GLES20.glClearColor(0.05f, 0.12f, 0.15f, 1.0f)
         GLES20.glEnable(GLES20.GL_DEPTH_TEST)
         GLES20.glDepthFunc(GLES20.GL_LEQUAL)
 
@@ -221,7 +223,7 @@ class STLRenderer : GLSurfaceView.Renderer {
         Matrix.scaleM(modelMatrix, 0, scaleNorm, scaleNorm, scaleNorm)
         Matrix.rotateM(modelMatrix, 0, rotationX, 1f, 0f, 0f)
         Matrix.rotateM(modelMatrix, 0, rotationY, 0f, 1f, 0f)
-        Matrix.translateM(modelMatrix, 0, -modelCenter, -modelCenter, -modelCenter)
+        Matrix.translateM(modelMatrix, 0, -modelCenterX, -modelCenterY, -modelCenterZ)
 
         Matrix.multiplyMM(tempMatrix, 0, viewMatrix, 0, modelMatrix, 0)
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, tempMatrix, 0)
