@@ -1,320 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_dark">
 
-    <!-- ═══ Top Bar ═══ -->
-    <LinearLayout
-        android:id="@+id/topBar"
-        android:layout_width="0dp"
-        android:layout_height="56dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="@color/surface_dark"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+    <com.amr3d.preview.pro.GLViewerView
+        android:id="@+id/glViewer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
-        <!-- أيقونة التطبيق -->
-        <ImageView
-            android:id="@+id/appLogo"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@drawable/app_logo"
-            android:contentDescription="@string/app_name" />
+    <TextView
+        android:id="@+id/tvModelReport"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_margin="16dp"
+        android:background="#80000000"
+        android:padding="8dp"
+        android:textColor="@color/text_primary"
+        android:textSize="12sp" />
 
-        <!-- اسم التطبيق -->
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:text="@string/app_name"
-            android:textColor="@color/text_primary"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:singleLine="true" />
+    <Button
+        android:id="@+id/btnClearPoints"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="16dp"
+        android:text="مسح النقاط"
+        android:backgroundTint="@color/accent_orange" />
 
-        <!-- واتساب -->
-        <ImageButton
-            android:id="@+id/btnWhatsapp"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@android:color/transparent"
-            android:src="@drawable/ic_whatsapp"
-            android:contentDescription="واتساب"
-            android:padding="6dp" />
-
-        <!-- زر فتح ملف — مدمج وأنيق -->
-        <Button
-            android:id="@+id/btnOpenFile"
-            style="@style/Widget.MaterialComponents.Button"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="@string/open_file"
-            android:textAllCaps="false"
-            android:textSize="12sp"
-            android:minWidth="0dp"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
-            android:layout_marginStart="6dp"
-            android:backgroundTint="@color/accent_orange" />
-
-    </LinearLayout>
-
-    <!-- ═══ GL Viewer Area ═══ -->
-    <FrameLayout
-        android:id="@+id/viewerContainer"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/topBar"
-        app:layout_constraintBottom_toTopOf="@id/displayToolbar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <!-- سطح OpenGL -->
-        <com.amr3d.preview.pro.GLViewerView
-            android:id="@+id/glViewerView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-        <!-- نص الحالة الفارغة -->
-        <TextView
-            android:id="@+id/emptyStateText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="@string/no_file_loaded"
-            android:textColor="@color/text_secondary"
-            android:textSize="16sp" />
-
-        <!-- ═══ ViewCube + أزرار الزوايا ═══ -->
-        <LinearLayout
-            android:id="@+id/viewCubeContainer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|start"
-            android:layout_margin="10dp"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
-
-            <!-- المكعب — حجم أكبر وأوضح -->
-            <com.amr3d.preview.pro.ViewCubeView
-                android:id="@+id/viewCube"
-                android:layout_width="110dp"
-                android:layout_height="110dp" />
-
-            <!-- أزرار الزوايا — في صف واضح -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="4dp"
-                android:gravity="center">
-
-                <Button
-                    android:id="@+id/btnViewBack"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="48dp"
-                    android:layout_height="28dp"
-                    android:text="Back"
-                    android:textSize="7sp"
-                    android:textColor="@color/text_primary"
-                    android:padding="0dp"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp" />
-
-                <Button
-                    android:id="@+id/btnViewLeft"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="48dp"
-                    android:layout_height="28dp"
-                    android:text="Left"
-                    android:textSize="7sp"
-                    android:textColor="@color/text_primary"
-                    android:padding="0dp"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp"
-                    android:layout_marginStart="2dp" />
-
-                <Button
-                    android:id="@+id/btnViewBottom"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="48dp"
-                    android:layout_height="28dp"
-                    android:text="Bot"
-                    android:textSize="7sp"
-                    android:textColor="@color/text_primary"
-                    android:padding="0dp"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp"
-                    android:layout_marginStart="2dp" />
-
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- بطاقة القياس -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/measurementCard"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|start"
-            android:layout_margin="12dp"
-            app:cardBackgroundColor="@color/surface_dark"
-            app:cardCornerRadius="10dp"
-            app:cardElevation="6dp"
-            android:visibility="gone">
-            <TextView
-                android:id="@+id/measurementText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="12dp"
-                android:textColor="@color/accent_blue"
-                android:textSize="14sp"
-                android:fontFamily="monospace" />
-        </androidx.cardview.widget.CardView>
-
-        <!-- بطاقة الفحص -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/inspectionCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:layout_margin="12dp"
-            app:cardBackgroundColor="@color/surface_dark"
-            app:cardCornerRadius="10dp"
-            app:cardElevation="6dp"
-            android:visibility="gone">
-            <TextView
-                android:id="@+id/inspectionText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="14dp"
-                android:textColor="@color/text_primary"
-                android:textSize="13sp"
-                android:fontFamily="monospace"
-                android:lineSpacingExtra="4dp" />
-        </androidx.cardview.widget.CardView>
-
-    </FrameLayout>
-
-    <!-- ═══ شريط الأدوات العلوي (شبكي / مادة / وحدة / تصدير) ═══ -->
-    <LinearLayout
-        android:id="@+id/displayToolbar"
-        android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:orientation="horizontal"
-        android:background="@color/surface_dark"
-        android:paddingStart="6dp"
-        android:paddingEnd="6dp"
-        android:gravity="center_vertical"
-        app:layout_constraintBottom_toTopOf="@id/bottomToolbar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <ToggleButton
-            android:id="@+id/btnWireframe"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="4dp"
-            android:textOn="شبكي ✓"
-            android:textOff="شبكي"
-            android:textSize="11sp"
-            android:textColor="@color/text_primary"
-            android:background="@drawable/bg_toggle_button" />
-
-        <Button
-            android:id="@+id/btnMaterial"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="4dp"
-            android:text="المادة"
-            android:textAllCaps="false"
-            android:textSize="11sp"
-            android:textColor="@color/text_primary" />
-
-        <Button
-            android:id="@+id/btnUnit"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="4dp"
-            android:text="@string/unit_mm"
-            android:textAllCaps="false"
-            android:textSize="11sp"
-            android:textColor="@color/text_primary" />
-
-        <Button
-            android:id="@+id/btnExport"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:text="📷 تصدير"
-            android:textAllCaps="false"
-            android:textSize="11sp"
-            android:textColor="@color/text_primary" />
-
-    </LinearLayout>
-
-    <!-- ═══ شريط الأدوات السفلي (قياس / فحص / تصفير) ═══ -->
-    <LinearLayout
-        android:id="@+id/bottomToolbar"
-        android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:orientation="horizontal"
-        android:background="@color/surface_dark"
-        android:paddingStart="6dp"
-        android:paddingEnd="6dp"
-        android:gravity="center_vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <ToggleButton
-            android:id="@+id/btnMeasureTool"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="4dp"
-            android:textOn="📏 قياس ✓"
-            android:textOff="📏 قياس"
-            android:textSize="11sp"
-            android:textColor="@color/text_primary"
-            android:background="@drawable/bg_toggle_button" />
-
-        <Button
-            android:id="@+id/btnInspect"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="4dp"
-            android:text="🔍 فحص"
-            android:textAllCaps="false"
-            android:textSize="11sp"
-            android:textColor="@color/text_primary" />
-
-        <Button
-            android:id="@+id/btnResetView"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:text="↺ تصفير"
-            android:textAllCaps="false"
-            android:textSize="11sp"
-            android:textColor="@color/text_primary" />
-
-    </LinearLayout>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</RelativeLayout>
