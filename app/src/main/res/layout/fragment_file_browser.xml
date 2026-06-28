@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background_dark"
+    android:layoutDirection="rtl">
+
+    <!-- شريط المسار العلوي -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:background="@color/surface_dark"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:gravity="center_vertical"
+        android:layoutDirection="ltr">
+
+        <!-- زر الرجوع -->
+        <ImageButton
+            android:id="@+id/btnBackDir"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_history"
+            android:background="@android:color/transparent"
+            android:tint="@color/accent_orange"
+            android:contentDescription="رجوع"
+            android:padding="6dp" />
+
+        <!-- مسار المجلد الحالي -->
+        <TextView
+            android:id="@+id/currentPath"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:maxLines="1"
+            android:ellipsize="start" />
+
+    </LinearLayout>
+
+    <!-- قائمة الملفات -->
+    <ListView
+        android:id="@+id/fileList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:divider="#1A1D24"
+        android:dividerHeight="1dp"
+        android:layoutDirection="inherit" />
+
+</LinearLayout>

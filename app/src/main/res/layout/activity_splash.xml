@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- Wireframe متحرك في الخلفية -->
+    <com.amr3d.preview.pro.WireframeAnimView
+        android:id="@+id/wireframeAnim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- اللوجو في المنتصف العلوي -->
+    <ImageView
+        android:id="@+id/splashLogo"
+        android:layout_width="280dp"
+        android:layout_height="150dp"
+        android:src="@drawable/splash_logo"
+        android:scaleType="fitCenter"
+        android:contentDescription="Amr Hamam 3D"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="120dp" />
+
+    <!-- خط نيون تحت اللوجو -->
+    <View
+        android:id="@+id/splashGlowLine"
+        android:layout_width="200dp"
+        android:layout_height="2dp"
+        android:background="@drawable/splash_glow_line"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="278dp" />
+
+    <!-- مرحباً بك -->
+    <TextView
+        android:id="@+id/splashTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="مرحباً بك"
+        android:textColor="#FFFFFF"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="298dp" />
+
+    <!-- المطور -->
+    <TextView
+        android:id="@+id/splashDev"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="تم التطوير بواسطة\nAmr Hamam 3D"
+        android:textColor="#FF8A1E"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="360dp" />
+
+    <!-- اسم التطبيق في الأسفل -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Amr3D Preview Pro"
+        android:textColor="#555555"
+        android:textSize="11sp"
+        android:letterSpacing="0.15"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="84dp" />
+
+    <!-- Progress Bar نيون -->
+    <ProgressBar
+        android:id="@+id/splashProgress"
+        style="@style/SplashProgressBar"
+        android:layout_width="260dp"
+        android:layout_height="6dp"
+        android:max="100"
+        android:progress="0"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="60dp" />
+
+</FrameLayout>
