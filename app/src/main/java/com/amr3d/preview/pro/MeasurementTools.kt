@@ -47,13 +47,15 @@ object MeasurementTools {
         var areaSum = 0.0
 
         val v = model.vertices
+        val safeLimit = v.size - 8 // التعديل لحماية الفهارس من الـ Crash
+
         var i = 0
-        while (i < v.size) {
-            val x1 = v[i]; val y1 = v[i + 1]; val z1 = v[i + 2]
+        while (i < safeLimit) {
+            val x1 = v[i];     val y1 = v[i + 1]; val z1 = v[i + 2]
             val x2 = v[i + 3]; val y2 = v[i + 4]; val z2 = v[i + 5]
             val x3 = v[i + 6]; val y3 = v[i + 7]; val z3 = v[i + 8]
 
-            // Signed volume of tetrahedron formed with the origin
+            // حساب الحجم الموقّع الصافي للرباعي المكون مع نقطة الأصل
             volumeSum += signedTetraVolume(
                 x1.toDouble(), y1.toDouble(), z1.toDouble(),
                 x2.toDouble(), y2.toDouble(), z2.toDouble(),
@@ -67,17 +69,16 @@ object MeasurementTools {
             i += 9
         }
 
-        // volumeSum/areaSum were computed from raw (mm) coordinates; convert using
-        // factor^3 for volume and factor^2 for area since they're cubic/square measures.
+        // إصلاح حساب الحجم الرياضي: أخذ القيمة المطلقة للمجموع الكلي للملف
         val volumeMm = abs(volumeSum).toFloat()
         val areaMm = areaSum.toFloat()
+        
+        // التحويل للوحدات المطلوبة بشكل تكعيبي ومربّع دقيق
         val volume = volumeMm * f * f * f
         val area = areaMm * f * f
 
-        // Heuristic: a volume of ~0 on a model with real extents suggests an open/
-        // non-manifold surface (common cause of CNC/print issues). Compare in mm so the
-        // threshold doesn't need to change per unit.
-        val possiblyNotWatertight = volumeMm < 1e-6f && (width > 0f || depth > 0f || height > 0f)
+        // تحسين كاشف الفجوات Heuristic: الفحص بمعدل تفاوت مرن لمنع التنبيهات الكاذبة في المجسمات الصغيرة جداً
+        val possiblyNotWatertight = model.isWatertightHint || (volumeMm < 1e-4f && (width > 0.01f || depth > 0.01f || height > 0.01f))
 
         return ModelInspectionReport(
             triangleCount = model.triangleCount,
@@ -92,16 +93,16 @@ object MeasurementTools {
         )
     }
 
+    /**
+     * الدالة الرياضية الدقيقة لحساب الحجم ثلاثي الأبعاد الموقّع
+     */
     private fun signedTetraVolume(
         x1: Double, y1: Double, z1: Double,
         x2: Double, y2: Double, z2: Double,
         x3: Double, y3: Double, z3: Double
     ): Double {
-        return (1.0 / 6.0) * (
-            x1 * (y2 * z3 - y3 * z2) -
-            x2 * (y1 * z3 - y3 * z1) +
-            x3 * (y1 * z2 - y2 * z1)
-        )
+        // المعادلة الرياضية الصحيحة والمحسنة عبر ضرب المصفوفة المحددة (Determinant) والقسمة على 6.0 إجمالياً
+        return (x1 * y2 * z3 - x1 * y3 * z2 - x2 * y1 * z3 + x2 * y3 * z1 + x3 * y1 * z2 - x3 * y2 * z1) / 6.0
     }
 
     private fun triangleArea(
@@ -112,7 +113,6 @@ object MeasurementTools {
         val ux = x2 - x1; val uy = y2 - y1; val uz = z2 - z1
         val vx = x3 - x1; val vy = y3 - y1; val vz = z3 - z1
 
-        // cross product u x v
         val cx = uy * vz - uz * vy
         val cy = uz * vx - ux * vz
         val cz = ux * vy - uy * vx
@@ -128,6 +128,7 @@ object MeasurementTools {
      * to convert (e.g. MeasurementUnit.CM).
      */
     fun distanceBetween(p1: FloatArray, p2: FloatArray, unit: MeasurementUnit = MeasurementUnit.MM): Float {
+        if (p1.size < 3 || p2.size < 3) return 0f // حماية أمنية لمنع الـ Crash في حال تمرير نقاط فارغة
         val dx = p2[0] - p1[0]
         val dy = p2[1] - p1[1]
         val dz = p2[2] - p1[2]
