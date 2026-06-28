@@ -8,7 +8,7 @@ import androidx.fragment.app.Fragment
 import java.io.File
 
 /**
- * تاريخ الملفات المفتوحة
+ * تاريخ الملفات المفتوحة - نسخة مطورة ومحمية من الانهيارات مع تنظيف تلقائي
  */
 class HistoryFragment : Fragment() {
 
@@ -17,39 +17,72 @@ class HistoryFragment : Fragment() {
     }
     var fileSelectedListener: OnFileSelectedListener? = null
 
+    private lateinit var listView: ListView
+    private lateinit var emptyText: TextView
+    private lateinit var btnClear: Button
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = inflater.inflate(R.layout.fragment_history, container, false)
-        val listView = view.findViewById<ListView>(R.id.historyList)
-        val emptyText = view.findViewById<TextView>(R.id.emptyHistory)
-        val btnClear = view.findViewById<Button>(R.id.btnClearHistory)
+        listView = view.findViewById(R.id.historyList)
+        emptyText = view.findViewById(R.id.emptyHistory)
+        btnClear = view.findViewById(R.id.btnClearHistory)
 
-        val history = loadHistory(requireContext())
-
-        if (history.isEmpty()) {
-            emptyText.visibility = View.VISIBLE
-            listView.visibility = View.GONE
-        } else {
-            emptyText.visibility = View.GONE
-            listView.visibility = View.VISIBLE
-            val names = history.map {
-                val f = File(it)
-                "📄 ${f.name}\n${f.parent}"
-            }
-            listView.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_2, android.R.id.text1, names)
-            listView.setOnItemClickListener { _, _, position, _ ->
-                val file = File(history[position])
-                if (file.exists()) fileSelectedListener?.onFileSelected(file)
-                else Toast.makeText(context, "الملف غير موجود", Toast.LENGTH_SHORT).show()
-            }
-        }
+        setupHistoryList()
 
         btnClear.setOnClickListener {
             clearHistory(requireContext())
-            emptyText.visibility = View.VISIBLE
-            listView.visibility = View.GONE
+            showEmptyState()
         }
 
         return view
+    }
+
+    private fun setupHistoryList() {
+        val context = requireContext()
+        val history = loadHistory(context).toMutableList()
+
+        if (history.isEmpty()) {
+            showEmptyState()
+        } else {
+            emptyText.visibility = View.GONE
+            listView.visibility = View.VISIBLE
+            
+            // إصلاح الـ Adapter: استخدام SimpleAdapter لربط العنوان (اسم الملف) والعنوان الفرعي (المسار) بشكل سليم في simple_list_item_2
+            val data = history.map { path ->
+                val file = File(path)
+                mapOf("title" to file.name, "subtitle" to file.parent.orEmpty())
+            }
+
+            val adapter = SimpleAdapter(
+                context,
+                data,
+                android.R.layout.simple_list_item_2,
+                arrayOf("title", "subtitle"),
+                intArrayOf(android.R.id.text1, android.R.id.text2)
+            )
+            
+            listView.adapter = adapter
+            
+            listView.setOnItemClickListener { _, _, position, _ ->
+                val filePath = history[position]
+                val file = File(filePath)
+                
+                if (file.exists()) {
+                    fileSelectedListener?.onFileSelected(file)
+                } else {
+                    // التعديل: تنظيف تلقائي وذكي للملف المفقود من السجل والذاكرة لتجنب تكرار الخطأ للمستخدم
+                    Toast.makeText(context, "الملف لم يعد موجوداً، تم حذفه من السجل", Toast.LENGTH_SHORT).show()
+                    removeFromHistory(context, filePath)
+                    setupHistoryList() // إعادة تحديث بناء القائمة فوراً
+                }
+            }
+        }
+    }
+
+    private fun showEmptyState() {
+        emptyText.visibility = View.VISIBLE
+        listView.visibility = View.GONE
+        listView.adapter = null
     }
 
     companion object {
@@ -63,6 +96,17 @@ class HistoryFragment : Fragment() {
             history.add(0, path)
             if (history.size > MAX_HISTORY) history.removeAt(history.lastIndex)
             prefs.edit().putString(PREF_KEY, history.joinToString("|")).apply()
+        }
+
+        /**
+         * دالة مضافة لحذف ملف بعينه من السجل عند اكتشاف تلفه أو عدم وجوده
+         */
+        fun removeFromHistory(context: Context, path: String) {
+            val prefs = context.getSharedPreferences("amr3d_prefs", Context.MODE_PRIVATE)
+            val history = loadHistory(context).toMutableList()
+            if (history.remove(path)) {
+                prefs.edit().putString(PREF_KEY, history.joinToString("|")).apply()
+            }
         }
 
         fun loadHistory(context: Context): List<String> {
