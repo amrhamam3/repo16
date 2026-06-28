@@ -1,5 +1,6 @@
 package com.amr3d.preview.pro
 
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.view.*
@@ -8,7 +9,7 @@ import androidx.fragment.app.Fragment
 import java.io.File
 
 /**
- * مستعرض الملفات - يعرض STL و DXF فقط
+ * مستعرض الملفات - يعرض STL و DXF فقط مع دعم الأنظمة الحديثة وطرق العرض المحسنة
  */
 class FileBrowserFragment : Fragment() {
 
@@ -31,14 +32,33 @@ class FileBrowserFragment : Fragment() {
         btnBack = view.findViewById(R.id.btnBackDir)
 
         btnBack.setOnClickListener {
-            currentPath.parentFile?.let {
-                currentPath = it
+            // منع الرجوع إلى ما وراء الجذر لتجنب المشاكل الأمنية
+            val parent = currentPath.parentFile
+            if (parent != null && currentPath.absolutePath != Environment.getExternalStorageDirectory().absolutePath) {
+                currentPath = parent
                 loadDirectory(currentPath)
+            } else {
+                Toast.makeText(requireContext(), "أنت في المجلد الرئيسي بالفعل", Toast.LENGTH_SHORT).show()
             }
         }
 
+        // التحقق من الصلاحيات على الأنظمة الحديثة وتنبيه المستخدم
+        checkStoragePermissions()
+
         loadDirectory(currentPath)
         return view
+    }
+
+    private fun checkStoragePermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                Toast.makeText(
+                    requireContext(), 
+                    "يرجى تفعيل صلاحية الوصول لجميع الملفات من إعدادات النظام ليعمل المستعرض", 
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
     }
 
     private fun loadDirectory(dir: File) {
@@ -46,24 +66,33 @@ class FileBrowserFragment : Fragment() {
 
         val entries = mutableListOf<File>()
 
-        // المجلدات أولاً
-        dir.listFiles()
-            ?.filter { it.isDirectory && !it.isHidden }
-            ?.sortedBy { it.name }
-            ?.let { entries.addAll(it) }
+        // معالجة الأخطاء في حال عدم القدرة على قراءة المجلد (بسبب الصلاحيات)
+        val files = try {
+            dir.listFiles()
+        } catch (e: SecurityException) {
+            Toast.makeText(requireContext(), "لا توجد صلاحية لقراءة هذا المجلد", Toast.LENGTH_SHORT).show()
+            null
+        }
 
-        // ثم ملفات STL/DXF فقط
-        dir.listFiles()
-            ?.filter { it.isFile && it.extension.lowercase() in supportedExtensions }
-            ?.sortedBy { it.name }
-            ?.let { entries.addAll(it) }
+        files?.let { allFiles ->
+            // 1. المجلدات أولاً
+            allFiles.filter { it.isDirectory && !it.isHidden }
+                .sortedBy { it.name.lowercase() }
+                .forEach { entries.add(it) }
 
-        val names = entries.map {
-            if (it.isDirectory) "📁 ${it.name}"
-            else {
-                val ext = it.extension.uppercase()
-                val size = it.length() / 1024
-                "📄 [$ext] ${it.name} (${size}KB)"
+            // 2. ثم ملفات STL/DXF فقط
+            allFiles.filter { it.isFile && it.extension.lowercase() in supportedExtensions }
+                .sortedBy { it.name.lowercase() }
+                .forEach { entries.add(it) }
+        }
+
+        val names = entries.map { file ->
+            if (file.isDirectory) {
+                "📁 ${file.name}"
+            } else {
+                val ext = file.extension.uppercase()
+                val formattedSize = formatFileSize(file.length())
+                "📄 [$ext] ${file.name} ($formattedSize)"
             }
         }
 
@@ -79,5 +108,17 @@ class FileBrowserFragment : Fragment() {
                 fileSelectedListener?.onFileSelected(file)
             }
         }
+    }
+
+    /**
+     * تحسين حساب حجم الملف ديناميكياً ليظهر بـ KB أو MB حسب حجم ملف الـ 3D
+     */
+    private fun formatFileSize(sizeInBytes: Long): String {
+        if (sizeInBytes <= 0) return "0 B"
+        val units = arrayOf("B", "KB", "MB", "GB")
+        val digitGroups = (Math.log10(sizeInBytes.toDouble()) / Math.log10(1024.0)).toInt()
+        val index = digitGroups.coerceAtMost(units.size - 1)
+        val size = sizeInBytes / Math.pow(1024.0, index.toDouble())
+        return String.format(java.util.Locale.US, "%.1f %s", size, units[index])
     }
 }
